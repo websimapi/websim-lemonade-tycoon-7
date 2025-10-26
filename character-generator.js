@@ -10,12 +10,15 @@ async function getCompositeImageAsDataURL(dollImage, dollContainer) {
     
     ctx.drawImage(dollImage, 0, 0, dollNaturalWidth, dollNaturalHeight);
     
-    const wornItems = Array.from(dollContainer.querySelectorAll('.worn-item'));
-    for (const item of wornItems) {
-        const itemScaleX = item.offsetWidth / dollRect.width;
-        const itemScaleY = item.offsetHeight / dollRect.height;
-        const targetX = (parseFloat(item.style.left) / dollRect.width) * dollNaturalWidth;
-        const targetY = (parseFloat(item.style.top) / dollRect.height) * dollNaturalHeight;
+    const wornItemWrappers = Array.from(dollContainer.querySelectorAll('.worn-item-wrapper'));
+    for (const wrapper of wornItemWrappers) {
+        const item = wrapper.querySelector('.worn-item');
+        if (!item) continue;
+        
+        const itemScaleX = wrapper.offsetWidth / dollRect.width;
+        const itemScaleY = wrapper.offsetHeight / dollRect.height;
+        const targetX = (parseFloat(wrapper.style.left) / dollRect.width) * dollNaturalWidth;
+        const targetY = (parseFloat(wrapper.style.top) / dollRect.height) * dollNaturalHeight;
         const targetWidth = itemScaleX * dollNaturalWidth;
         const targetHeight = itemScaleY * dollNaturalHeight;
 

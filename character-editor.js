@@ -3,7 +3,31 @@ function makeInteractive(element, dollContainer) {
     let initialDist = 1;
     let initialWidth = element.offsetWidth;
 
+    // For handle resizing
+    let resizing = false;
+    let currentHandle;
+    let startX, startY, startWidth, startHeight, startLeft, startTop;
+
     const pointerDown = (e) => {
+        e.stopPropagation(); // Prevent doll container from getting event
+        
+        if (e.target.classList.contains('resize-handle')) {
+            resizing = true;
+            currentHandle = e.target;
+            const rect = element.getBoundingClientRect();
+            const parentRect = dollContainer.getBoundingClientRect();
+
+            startWidth = rect.width;
+            startHeight = rect.height;
+            startX = e.clientX;
+            startY = e.clientY;
+            startLeft = element.offsetLeft;
+            startTop = element.offsetTop;
+
+            element.setPointerCapture(e.pointerId);
+            return;
+        }
+
         element.setPointerCapture(e.pointerId);
         activeTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
@@ -15,6 +39,45 @@ function makeInteractive(element, dollContainer) {
     };
 
     const pointerMove = (e) => {
+        if (resizing) {
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            
+            let newWidth = startWidth;
+            let newHeight = startHeight;
+            let newLeft = startLeft;
+            let newTop = startTop;
+
+            if (currentHandle.classList.contains('resize-handle-br')) {
+                newWidth = startWidth + dx;
+            } else if (currentHandle.classList.contains('resize-handle-bl')) {
+                newWidth = startWidth - dx;
+                newLeft = startLeft + dx;
+            } else if (currentHandle.classList.contains('resize-handle-tr')) {
+                newWidth = startWidth + dx;
+                newHeight = startHeight - dy;
+                newTop = startTop + dy;
+            } else if (currentHandle.classList.contains('resize-handle-tl')) {
+                newWidth = startWidth - dx;
+                newLeft = startLeft + dx;
+                newTop = startTop + dy;
+            }
+            
+            const aspectRatio = startWidth / startHeight;
+            if (newWidth / aspectRatio > 0) {
+                 newHeight = newWidth / aspectRatio;
+            }
+            
+            if (newWidth > 20 && newHeight > 20) { // Minimum size
+                element.style.width = `${newWidth}px`;
+                element.style.height = `${newHeight}px`;
+                element.style.left = `${newLeft}px`;
+                element.style.top = `${newTop}px`;
+            }
+
+            return;
+        }
+
         if (!activeTouches.has(e.pointerId)) return;
 
         activeTouches.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -28,12 +91,17 @@ function makeInteractive(element, dollContainer) {
             const currentDist = Math.hypot(touches[0].x - touches[1].x, touches[0].y - touches[1].y);
             const scale = currentDist / initialDist;
             const newWidth = initialWidth * scale;
-            element.style.width = `${newWidth}px`;
-            element.style.height = 'auto'; // Maintain aspect ratio
+            if (newWidth > 20) { // Minimum size
+                element.style.width = `${newWidth}px`;
+                element.style.height = 'auto'; // Maintain aspect ratio
+            }
         }
     };
 
     const pointerUp = (e) => {
+        if (resizing) {
+            resizing = false;
+        }
         activeTouches.delete(e.pointerId);
         if (activeTouches.size < 2) {
             initialDist = 1; // Reset for next interaction
@@ -49,35 +117,65 @@ function makeInteractive(element, dollContainer) {
 
 
 function createWornItem(src, itemType, alt, x, y, dollContainer, style = {}) {
-    const existingItem = dollContainer.querySelector(`.worn-item[data-item-type="${itemType}"]`);
-    if (existingItem) {
-        existingItem.remove();
+    const existingItemWrapper = dollContainer.querySelector(`.worn-item-wrapper[data-item-type="${itemType}"]`);
+    if (existingItemWrapper) {
+        existingItemWrapper.remove();
     }
+    
+    // De-select any other items
+    dollContainer.querySelectorAll('.worn-item-wrapper').forEach(w => w.classList.remove('selected'));
+
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('worn-item-wrapper', 'selected');
+    wrapper.dataset.itemType = itemType;
 
     const wornItem = document.createElement('img');
     wornItem.src = src;
     wornItem.alt = alt;
     wornItem.classList.add('worn-item');
-    wornItem.dataset.itemType = itemType;
+    wornItem.dataset.itemType = itemType; // Keep for generator compatibility
+    wrapper.appendChild(wornItem);
+
+    // Add resize handles
+    const handles = ['tl', 'tr', 'bl', 'br'];
+    handles.forEach(pos => {
+        const handle = document.createElement('div');
+        handle.classList.add('resize-handle', `resize-handle-${pos}`);
+        wrapper.appendChild(handle);
+    });
+
+    wrapper.onload = () => { // This should be on wornItem.onload
+        // The logic inside onload needs to run after the image has loaded to get its dimensions.
+    };
+    
+    dollContainer.appendChild(wrapper);
 
     wornItem.onload = () => {
-        dollContainer.appendChild(wornItem);
-
         if (style.left && style.top) {
-            wornItem.style.left = style.left;
-            wornItem.style.top = style.top;
-            wornItem.style.width = style.width;
-            wornItem.style.height = style.height;
+            wrapper.style.left = style.left;
+            wrapper.style.top = style.top;
+            wrapper.style.width = style.width;
+            wrapper.style.height = style.height;
         } else {
-            const itemWidth = wornItem.offsetWidth;
-            const itemHeight = wornItem.offsetHeight;
-
-            wornItem.style.left = `${x - itemWidth / 2}px`;
-            wornItem.style.top = `${y - itemHeight / 2}px`;
+            const itemWidth = wornItem.naturalWidth * 0.5; // Start at a reasonable size
+            const itemHeight = wornItem.naturalHeight * 0.5;
+            
+            wrapper.style.width = `${itemWidth}px`;
+            wrapper.style.height = `${itemHeight}px`;
+            wrapper.style.left = `${x - itemWidth / 2}px`;
+            wrapper.style.top = `${y - itemHeight / 2}px`;
         }
 
-        makeInteractive(wornItem, dollContainer);
+        makeInteractive(wrapper, dollContainer);
     };
+
+     // Add a click listener to the doll container to handle selection
+    dollContainer.addEventListener('click', (e) => {
+        const clickedWrapper = e.target.closest('.worn-item-wrapper');
+        dollContainer.querySelectorAll('.worn-item-wrapper').forEach(w => {
+            w.classList.toggle('selected', w === clickedWrapper);
+        });
+    });
 }
 
 // Drag and drop handler functions to be exported
@@ -198,6 +296,13 @@ export function applyPreset(preset, elements) {
 
     // Add items from preset
     preset.items.forEach(item => {
-        createWornItem(item.src, item.itemType, item.alt, 0, 0, dollContainer, item.style);
+        // We pass the style object to createWornItem, but it now expects the wrapper's style
+        const wrapperStyle = {
+            left: item.style.left,
+            top: item.style.top,
+            width: item.style.width,
+            height: item.style.height,
+        };
+        createWornItem(item.src, item.itemType, item.alt, 0, 0, dollContainer, wrapperStyle);
     });
 }

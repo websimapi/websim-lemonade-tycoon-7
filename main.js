@@ -107,23 +107,26 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.confirmCharacterBtn.addEventListener('click', () => {
         console.log("Starting a new game with generated character...");
         const gender = elements.dollImage.src.includes('female') ? 'female' : 'male';
-        const wornItems = Array.from(elements.dollContainer.querySelectorAll('.worn-item'));
+        const wornItemWrappers = Array.from(elements.dollContainer.querySelectorAll('.worn-item-wrapper'));
 
         const presetData = {
             id: `preset_${Date.now()}`,
             name: `Character ${new Date().toLocaleTimeString()}`,
             gender: gender,
-            items: wornItems.map(item => ({
-                src: item.src,
-                itemType: item.dataset.itemType,
-                alt: item.alt,
-                style: {
-                    left: item.style.left,
-                    top: item.style.top,
-                    width: item.style.width,
-                    height: item.style.height,
+            items: wornItemWrappers.map(wrapper => {
+                const item = wrapper.querySelector('.worn-item');
+                return {
+                    src: item.src,
+                    itemType: item.dataset.itemType,
+                    alt: item.alt,
+                    style: {
+                        left: wrapper.style.left,
+                        top: wrapper.style.top,
+                        width: wrapper.style.width,
+                        height: wrapper.style.height,
+                    }
                 }
-            })),
+            }),
             previewImageUrl: elements.generatedCharacterImage.src,
             isPublic: false,
         };
@@ -133,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         replayService.recordEvent('new_game_started', {
             character: {
                 gender,
-                items: wornItems.map(item => item.alt),
+                items: wornItemWrappers.map(w => w.querySelector('.worn-item').alt),
                 generatedImage: elements.generatedCharacterImage.src
             },
             timestamp: Date.now()
