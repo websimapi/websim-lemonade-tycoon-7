@@ -1,6 +1,7 @@
 async function getCompositeImageAsDataURL(dollImage, dollContainer) {
     const canvas = document.createElement('canvas');
-    const dollRect = dollImage.getBoundingClientRect();
+    // The container's bounding rect is the correct reference for clothing positions
+    const containerRect = dollContainer.getBoundingClientRect(); 
     const dollNaturalWidth = dollImage.naturalWidth || dollImage.offsetWidth;
     const dollNaturalHeight = dollImage.naturalHeight || dollImage.offsetHeight;
 
@@ -15,10 +16,11 @@ async function getCompositeImageAsDataURL(dollImage, dollContainer) {
         const item = wrapper.querySelector('.worn-item');
         if (!item) continue;
         
-        const itemScaleX = wrapper.offsetWidth / dollRect.width;
-        const itemScaleY = wrapper.offsetHeight / dollRect.height;
-        const targetX = (parseFloat(wrapper.style.left) / dollRect.width) * dollNaturalWidth;
-        const targetY = (parseFloat(wrapper.style.top) / dollRect.height) * dollNaturalHeight;
+        // Calculate position and scale relative to the container, not the image
+        const itemScaleX = wrapper.offsetWidth / containerRect.width;
+        const itemScaleY = wrapper.offsetHeight / containerRect.height;
+        const targetX = (parseFloat(wrapper.style.left) / containerRect.width) * dollNaturalWidth;
+        const targetY = (parseFloat(wrapper.style.top) / containerRect.height) * dollNaturalHeight;
         const targetWidth = itemScaleX * dollNaturalWidth;
         const targetHeight = itemScaleY * dollNaturalHeight;
 
