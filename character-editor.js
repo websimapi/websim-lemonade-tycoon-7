@@ -157,9 +157,31 @@ function createWornItem(src, itemType, alt, x, y, dollContainer, style = {}) {
             wrapper.style.width = style.width;
             wrapper.style.height = style.height;
         } else {
-            const itemWidth = wornItem.naturalWidth * 0.5; // Start at a reasonable size
-            const itemHeight = wornItem.naturalHeight * 0.5;
-            
+            const dollContainerWidth = dollContainer.offsetWidth;
+            let itemWidth;
+
+            // Set initial size based on item type and doll container width
+            switch(itemType) {
+                case 'hair':
+                case 'hat':
+                    itemWidth = dollContainerWidth * 0.4;
+                    break;
+                case 'shirt':
+                    itemWidth = dollContainerWidth * 0.6;
+                    break;
+                case 'pants':
+                    itemWidth = dollContainerWidth * 0.55;
+                    break;
+                case 'shoes':
+                    itemWidth = dollContainerWidth * 0.5;
+                    break;
+                default:
+                    itemWidth = dollContainerWidth * 0.5;
+            }
+
+            const aspectRatio = wornItem.naturalWidth / wornItem.naturalHeight;
+            const itemHeight = aspectRatio > 0 ? itemWidth / aspectRatio : itemWidth;
+
             wrapper.style.width = `${itemWidth}px`;
             wrapper.style.height = `${itemHeight}px`;
             wrapper.style.left = `${x - itemWidth / 2}px`;
