@@ -6,12 +6,14 @@ import { initializeEditor, applyPreset, dragHandlers } from './character-editor.
 import { generateCharacter } from './character-generator.js';
 import { generateAsset } from './asset-generator.js';
 import { PresetManager } from './presets.js';
+import { AssetManager } from './asset-manager.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Instantiate services
     const replayService = new ReplayService();
     const audioManager = new AudioManager();
     const presetManager = new PresetManager(elements, applyPreset);
+    const assetManager = new AssetManager(elements, addNewClothingItem, dragHandlers);
     
     // Setup UI
     setupScreenTransitions();
@@ -31,6 +33,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elements.presetsBtn.addEventListener('click', () => {
         presetManager.renderGalleries();
+    });
+
+    // --- Asset Browser Logic ---
+    elements.browseAssetsBtn.addEventListener('click', () => {
+        assetManager.renderGallery();
+        showScreen(elements.assetBrowserModal);
+    });
+    
+    elements.closeBrowserBtn.addEventListener('click', () => {
+        hideScreen(elements.assetBrowserModal);
     });
 
     // --- Asset Generator Logic ---
@@ -54,7 +66,16 @@ document.addEventListener('DOMContentLoaded', () => {
         showScreen(elements.generatorLoadingOverlay);
         try {
             const imageUrl = await generateAsset(prompt, type);
-            addNewClothingItem({ url: imageUrl, prompt, type }, dragHandlers);
+            const newItem = {
+                id: `asset_${Date.now()}`,
+                url: imageUrl,
+                prompt,
+                type,
+                creator: (await window.websim.getCurrentUser()).username,
+                isPublic: false,
+            };
+            assetManager.saveAssetLocally(newItem);
+            addNewClothingItem(newItem, dragHandlers);
             hideScreen(elements.assetGeneratorModal);
             elements.itemPromptInput.value = ''; // Clear input
         } catch (error) {

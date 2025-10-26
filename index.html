@@ -51,6 +51,7 @@
                     </div>
                     <button class="carousel-btn" id="next-item-btn">▶</button>
                 </div>
+                <button id="browse-assets-btn" title="Browse Assets">☁️</button>
                 <button id="open-generator-btn" title="Generate New Item">✨</button>
             </div>
             <div id="character-display">
@@ -88,6 +89,18 @@
             <div id="generator-loading-overlay" class="hidden">
                 <div class="loading-spinner"></div>
                 <p>Creating your item...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="asset-browser-modal" class="hidden">
+        <div class="asset-browser-content">
+            <div class="asset-browser-header">
+                <h3>Browse Wearables</h3>
+                <button id="close-browser-btn">Close</button>
+            </div>
+            <div id="asset-gallery">
+                <!-- Asset cards will be injected here -->
             </div>
         </div>
     </div>

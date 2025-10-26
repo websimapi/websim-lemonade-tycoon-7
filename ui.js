@@ -30,6 +30,11 @@ export const elements = {
     itemTypeSelect: document.getElementById('item-type-select'),
     itemPromptInput: document.getElementById('item-prompt-input'),
     generatorLoadingOverlay: document.getElementById('generator-loading-overlay'),
+    // Asset Browser Modal Elements
+    assetBrowserModal: document.getElementById('asset-browser-modal'),
+    browseAssetsBtn: document.getElementById('browse-assets-btn'),
+    closeBrowserBtn: document.getElementById('close-browser-btn'),
+    assetGallery: document.getElementById('asset-gallery'),
 };
 
 export function showScreen(screen) {
